@@ -22,10 +22,17 @@ const Wrapper = styled.div`
   top: 0px;
   z-index: 9999;
   box-sizing: border-box;
+  width: calc(220px * 0.8); /* reduce sidebar width by ~20% */
+  min-width: 160px;
+
+  @media screen and (max-width: 1200px) {
+    width: calc(200px * 0.8);
+  }
 
   @media screen and (max-width: 800px) {
     grid-template-columns: 1fr;
     position: relative;
+    width: auto;
   }
 
   @media screen and (max-width: 600px) {
@@ -36,12 +43,26 @@ const Wrapper = styled.div`
 const Option = styled.div`
   font-weight: 700;
   font-size: 14px;
-  opacity: ${({ activeText }) => (activeText ? 1 : 0.6)};
+  opacity: ${({ activeText }) => (activeText ? 1 : 0.75)};
   color: ${({ theme }) => theme.text1};
   display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: all 160ms ease;
+  cursor: pointer;
   :hover {
     opacity: 1;
+    transform: translateX(6px);
+    background: rgba(255,255,255,0.02);
   }
+  ${({ activeText, theme }) =>
+    activeText &&
+    `
+    background: rgba(255,255,255,0.03);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    border-left: 3px solid ${theme.primary || '#2172E5'};
+  `}
 `
 
 const DesktopWrapper = styled.div`

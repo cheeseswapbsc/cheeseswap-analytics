@@ -123,7 +123,14 @@ const TokenChart = ({ address, color, base }) => {
       utcStartTime = timeframeStart
     }
   }
-  const domain = [dataMin => (dataMin > utcStartTime ? dataMin : utcStartTime), 'dataMax']
+  const domain = [
+    dataMin => (dataMin > utcStartTime ? dataMin : utcStartTime),
+    dataMax => {
+      const span = dataMax - utcStartTime
+      const pad = Math.max(span * 0.02, timeWindow === timeframeOptions.MONTH ? 86400 : 0)
+      return dataMax + pad
+    }
+  ]
   const aspect = below1080 ? 60 / 32 : below600 ? 60 / 42 : 60 / 22
 
   chartData = chartData?.filter(entry => entry.date >= utcStartTime)
@@ -261,7 +268,7 @@ const TokenChart = ({ address, color, base }) => {
               dataKey="date"
               tick={{ fill: textColor }}
               type={'number'}
-              domain={['dataMin', 'dataMax']}
+              domain={domain}
             />
             <YAxis
               type="number"
@@ -375,7 +382,7 @@ const TokenChart = ({ address, color, base }) => {
               dataKey="date"
               tick={{ fill: textColor }}
               type={'number'}
-              domain={['dataMin', 'dataMax']}
+              domain={domain}
             />
             <YAxis
               type="number"

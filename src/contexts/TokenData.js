@@ -193,24 +193,45 @@ export default function Provider({ children }) {
 }
 
 const getTopTokens = async (ethPrice, ethPriceOld) => {
+  // helper to retry Apollo client queries on transient network errors
+  async function execQueryWithRetry(queryOptions, maxRetries = 3) {
+    let attempt = 0
+    while (attempt <= maxRetries) {
+      try {
+        return await client.query(queryOptions)
+      } catch (err) {
+        attempt += 1
+        const msg = err && err.message ? err.message : String(err)
+        // detect network errors (fetch failed / TypeError) or 429/Too Many Requests
+        const isNetwork = msg.includes('NetworkError') || msg.includes('Failed to fetch') || msg.includes('Network request failed') || err.name === 'TypeError'
+        const isRateLimit = msg.includes('429') || msg.includes('Too Many Requests')
+        if (attempt > maxRetries || (!isNetwork && !isRateLimit)) {
+          throw err
+        }
+        // exponential backoff
+        const wait = 500 * Math.pow(2, attempt)
+        await new Promise(r => setTimeout(r, wait))
+      }
+    }
+  }
   const utcCurrentTime = dayjs()
   const utcOneDayBack = utcCurrentTime.subtract(1, 'day').unix()
   const utcTwoDaysBack = utcCurrentTime.subtract(2, 'day').unix()
   let oneDayBlock = await getBlockFromTimestamp(utcOneDayBack)
   let twoDayBlock = await getBlockFromTimestamp(utcTwoDaysBack)
 
-  try {
-    const currentResult = await client.query({
+    try {
+    const currentResult = await execQueryWithRetry({
       query: TOKENS_CURRENT,
       fetchPolicy: 'cache-first'
     })
 
-    const oneDayResult = await client.query({
+    const oneDayResult = await execQueryWithRetry({
       query: TOKENS_DYNAMIC(oneDayBlock),
       fetchPolicy: 'cache-first'
     })
 
-    const twoDayResult = await client.query({
+    const twoDayResult = await execQueryWithRetry({
       query: TOKENS_DYNAMIC(twoDayBlock),
       fetchPolicy: 'cache-first'
     })
@@ -305,7 +326,8 @@ const getTopTokens = async (ethPrice, ethPriceOld) => {
 
     // calculate percentage changes and daily changes
   } catch (e) {
-    console.log(e)
+    console.log('Error in getTopTokens:', e)
+    return []
   }
 }
 
@@ -634,8 +656,18 @@ export function Updater() {
   useEffect(() => {
     async function getData() {
       // get top pairs for overview list
-      let topTokens = await getTopTokens(ethPrice, ethPriceOld)
-      topTokens && updateTopTokens(topTokens)
+      try {
+        let topTokens = await getTopTokens(ethPrice, ethPriceOld)
+        if (Array.isArray(topTokens) && topTokens.length > 0) {
+          updateTopTokens(topTokens)
+        } else {
+          // ensure state has an empty list instead of undefined
+          updateTopTokens([])
+        }
+      } catch (e) {
+        console.warn('Failed to load top tokens', e)
+        updateTopTokens([])
+      }
     }
     ethPrice && ethPriceOld && getData()
   }, [ethPrice, ethPriceOld, updateTopTokens])

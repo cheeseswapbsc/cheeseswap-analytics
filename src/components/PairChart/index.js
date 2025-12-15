@@ -202,7 +202,14 @@ const PairChart = ({ address, color, base0, base1 }) => {
               dataKey="date"
               tick={{ fill: textColor }}
               type={'number'}
-              domain={['dataMin', 'dataMax']}
+              domain={[
+                dataMin => (dataMin > utcStartTime ? dataMin : utcStartTime),
+                dataMax => {
+                  const span = dataMax - utcStartTime
+                  const pad = Math.max(span * 0.02, timeWindow === timeframeOptions.MONTH ? 86400 : 0)
+                  return dataMax + pad
+                }
+              ]}
             />
             <YAxis
               type="number"
@@ -290,7 +297,7 @@ const PairChart = ({ address, color, base0, base1 }) => {
               dataKey="date"
               tick={{ fill: textColor }}
               type={'number'}
-              domain={['dataMin', 'dataMax']}
+              domain={[dataMin => (dataMin > utcStartTime ? dataMin : utcStartTime), dataMax => dataMax + (dataMax - utcStartTime) * 0.02]}
             />
             <YAxis
               type="number"

@@ -105,6 +105,7 @@ const GlobalChart = ({ display }) => {
             field="totalLiquidityUSD"
             width={width}
             type={CHART_TYPES.BAR}
+            defaultWindow={timeWindow === timeframeOptions.MONTH ? 'full' : 30}
           />
         </ResponsiveContainer>
       )}
@@ -119,6 +120,7 @@ const GlobalChart = ({ display }) => {
             width={width}
             type={CHART_TYPES.BAR}
             useWeekly={volumeWindow === VOLUME_WINDOW.WEEKLY}
+            defaultWindow={timeWindow === timeframeOptions.MONTH ? 'full' : 30}
           />
         </ResponsiveContainer>
       )}

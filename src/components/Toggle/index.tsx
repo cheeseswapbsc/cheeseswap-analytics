@@ -16,7 +16,10 @@ const StyledToggle = styled.div`
   cursor: pointer;
   text-decoration: none;
   margin-top: 1rem;
-  color: white;
+  color: ${({ theme }) => theme.text1};
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: ${({ theme }) => theme.bg3};
 
   :hover {
     text-decoration: none;

@@ -18,7 +18,8 @@ BigNumber.set({ EXPONENTIAL_AT: 50 })
 dayjs.extend(utc)
 
 export function getTimeframe(timeWindow) {
-  const utcEndTime = dayjs.utc()
+  // Use local browser time for timeframe calculations (show dates in user's local timezone)
+  const utcEndTime = dayjs()
   // based on window, get starttime
   let utcStartTime
   switch (timeWindow) {

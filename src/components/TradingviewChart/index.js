@@ -49,15 +49,13 @@ const ValueBlock = styled.div`
 
 const ChartWrapper = styled.div``
 
-const TradingViewChart = ({ type = 'BAR', data, base, baseChange, field, title, width, useWeekly = false }) => {
+const TradingViewChart = ({ type = 'BAR', data, base, baseChange, field, title, width, useWeekly = false, defaultWindow = 30 }) => {
   // parse and format input data
   const _rawFormatted = (data || []).map(entry => {
     const value = parseFloat(entry[field])
     return {
-      time: dayjs
-        .unix(entry.date)
-        .utc()
-        .format('YYYY-MM-DD'),
+      // convert timestamp to browser local date (start of local day) so labels align to local calendar days
+      time: dayjs.unix(entry.date).local().startOf('day').format('YYYY-MM-DD'),
       value: Number.isFinite(value) ? value : NaN
     }
   })
@@ -67,6 +65,16 @@ const TradingViewChart = ({ type = 'BAR', data, base, baseChange, field, title, 
     formattedData = _rawFormatted.map(d => ({ time: d.time, value: Number.isFinite(d.value) ? d.value : 0 }))
   }
 
+  // Ensure today's local date is present in labels so the chart shows current day
+  const localToday = dayjs().local().startOf('day').format('YYYY-MM-DD')
+  const labelsSoFar = formattedData.map(d => d.time)
+  const hasToday = labelsSoFar.length && labelsSoFar[labelsSoFar.length - 1] === localToday
+  if (!hasToday) {
+    // append a zero-valued entry for today so the category axis includes it
+    formattedData = formattedData ? formattedData.slice() : []
+    formattedData.push({ time: localToday, value: 0 })
+  }
+
   const labels = formattedData.map(d => d.time)
   const values = formattedData.map(d => d.value)
 
@@ -74,8 +82,8 @@ const TradingViewChart = ({ type = 'BAR', data, base, baseChange, field, title, 
   const fullLabels = labels
   const fullValues = values
   const totalPoints = fullLabels.length
-        const defaultWindow = 30
-  const startIndex = Math.max(0, totalPoints - defaultWindow)
+        // If defaultWindow === 'full', show entire dataset; otherwise show last `defaultWindow` points
+        const startIndex = defaultWindow === 'full' ? 0 : Math.max(0, totalPoints - Number(defaultWindow))
 
   // color bars by up/down compared to previous value
   const backgroundColors = values.map((v, i) => {

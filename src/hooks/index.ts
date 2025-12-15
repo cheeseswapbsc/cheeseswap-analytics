@@ -97,3 +97,39 @@ export default function useInterval(callback: () => void, delay: null | number) 
     return
   }, [delay])
 }
+
+export function useCountUp(target: number, duration = 900) {
+  const [value, setValue] = useState<number>(0)
+  const ref = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (target == null || isNaN(Number(target))) {
+      setValue(0)
+      return
+    }
+
+    const start = performance.now()
+    const from = Number(value)
+    const to = Number(target)
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+      const current = from + (to - from) * eased
+      setValue(current)
+      if (t < 1) {
+        ref.current = requestAnimationFrame(step)
+      }
+    }
+
+    ref.current = requestAnimationFrame(step)
+
+    return () => {
+      if (ref.current) cancelAnimationFrame(ref.current)
+      ref.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration])
+
+  return value
+}
